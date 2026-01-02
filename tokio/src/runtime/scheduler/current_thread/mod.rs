@@ -457,7 +457,7 @@ impl Handle {
     /// Spawns a future onto the `CurrentThread` scheduler
     #[track_caller]
     pub(crate) fn spawn<F>(
-        me: &Arc<Self>,
+        hanlder: &Arc<Self>,
         future: F,
         id: crate::runtime::task::Id,
         spawned_at: SpawnLocation,
@@ -466,16 +466,21 @@ impl Handle {
         F: crate::future::Future + Send + 'static,
         F::Output: Send + 'static,
     {
-        let (handle, notified) = me.shared.owned.bind(future, me.clone(), id, spawned_at);
+        // mattia: We bind this to a list that contains all the tasks
+        let (handle, notified) = hanlder
+            .shared
+            .owned
+            .bind(future, hanlder.clone(), id, spawned_at);
 
-        me.task_hooks.spawn(&TaskMeta {
+        // mattia: Tried to remove this, test are not failing
+        hanlder.task_hooks.spawn(&TaskMeta {
             id,
             spawned_at,
             _phantom: Default::default(),
         });
 
         if let Some(notified) = notified {
-            me.schedule(notified);
+            hanlder.schedule(notified);
         }
 
         handle
