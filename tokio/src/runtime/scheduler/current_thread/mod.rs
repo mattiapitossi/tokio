@@ -457,7 +457,7 @@ impl Handle {
     /// Spawns a future onto the `CurrentThread` scheduler
     #[track_caller]
     pub(crate) fn spawn<F>(
-        hanlder: &Arc<Self>,
+        handler: &Arc<Self>,
         future: F,
         id: crate::runtime::task::Id,
         spawned_at: SpawnLocation,
@@ -467,20 +467,20 @@ impl Handle {
         F::Output: Send + 'static,
     {
         // mattia: We bind this to a list that contains all the tasks
-        let (handle, notified) = hanlder
+        let (handle, notified) = handler
             .shared
             .owned
-            .bind(future, hanlder.clone(), id, spawned_at);
+            .bind(future, handler.clone(), id, spawned_at);
 
         // mattia: Tried to remove this, test are not failing
-        hanlder.task_hooks.spawn(&TaskMeta {
+        handler.task_hooks.spawn(&TaskMeta {
             id,
             spawned_at,
             _phantom: Default::default(),
         });
 
         if let Some(notified) = notified {
-            hanlder.schedule(notified);
+            handler.schedule(notified);
         }
 
         handle
@@ -504,7 +504,7 @@ impl Handle {
         F: crate::future::Future + 'static,
         F::Output: 'static,
     {
-        // Safety: the caller guarantees that the this is only called on a `LocalRuntime`.
+        // Safety: the caller guarantees that this is only called on a `LocalRuntime`.
         let (handle, notified) = unsafe {
             me.shared
                 .owned

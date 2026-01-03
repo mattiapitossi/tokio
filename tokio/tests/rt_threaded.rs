@@ -4,7 +4,7 @@
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::runtime::{self, Builder};
+use tokio::runtime;
 use tokio::sync::oneshot;
 use tokio_test::{assert_err, assert_ok};
 
@@ -813,7 +813,7 @@ fn test_tuning() {
 }
 
 fn rt() -> runtime::Runtime {
-    Builder::new_multi_thread().enable_alt_timer().enable_all().build().unwrap()
+    runtime::Runtime::new().unwrap()
 }
 
 #[cfg(tokio_unstable)]

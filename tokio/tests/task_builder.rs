@@ -14,7 +14,7 @@ async fn spawn_with_name() {
     assert_eq!(result.unwrap(), "task executed");
 }
 
-#[tokio::test(flavor = "local")]
+#[tokio::test(flavor = "current_thread")]
 async fn spawn_local_on_local_runtime() {
     let result = Builder::new()
         .spawn_local(async { "task executed" })
