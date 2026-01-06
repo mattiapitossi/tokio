@@ -164,6 +164,7 @@ fn test_spawn_local_in_multi_thread_runtime() {
 
 fn rt() -> tokio::runtime::LocalRuntime {
     tokio::runtime::Builder::new_current_thread()
+        .event_interval(0)
         .enable_all()
         .build_local(LocalOptions::default())
         .unwrap()

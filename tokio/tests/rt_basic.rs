@@ -1,9 +1,9 @@
 #![warn(rust_2018_idioms)]
 #![cfg(feature = "full")]
 
-use tokio::runtime::Runtime;
+use tokio::runtime::{Builder, Runtime};
 use tokio::sync::oneshot;
-use tokio::time::{timeout, Duration};
+use tokio::time::{sleep, timeout, Duration};
 use tokio_test::{assert_err, assert_ok};
 
 use std::future::Future;
@@ -283,6 +283,32 @@ fn spawn_remote() {
 
         assert_eq!(1, local);
     }
+}
+
+#[test]
+fn check() {
+    let rt = Builder::new_current_thread()
+        .enable_all()
+        .event_interval(0)
+        .build()
+        .unwrap();
+
+    rt.block_on(async {
+        let (tx, rx) = oneshot::channel::<&'static str>();
+
+        // Spawn sender
+        tokio::spawn(async move {
+            println!("sender: doing some work");
+            sleep(Duration::from_millis(100)).await;
+            println!("sender: sending");
+            let _ = tx.send("hello from sender");
+        });
+
+        // Receiver
+        println!("receiver: waiting");
+        let msg = rx.await.unwrap();
+        println!("receiver: got -> {}", msg);
+    });
 }
 
 #[test]

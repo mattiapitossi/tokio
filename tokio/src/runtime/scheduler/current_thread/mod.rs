@@ -635,6 +635,7 @@ cfg_unstable_metrics! {
 }
 
 use std::num::NonZeroU64;
+use libc::pread;
 
 impl Handle {
     pub(crate) fn owned_id(&self) -> NonZeroU64 {
@@ -774,6 +775,8 @@ impl CoreGuard<'_> {
                     core.tick();
 
                     let entry = core.next_task(handle);
+                    
+                    dbg!(&entry);
 
                     let task = match entry {
                         Some(entry) => entry,
