@@ -496,6 +496,7 @@ impl Runtime {
 
 impl Drop for Runtime {
     fn drop(&mut self) {
+        println!("drop runtime called");
         match &mut self.scheduler {
             Scheduler::CurrentThread(current_thread) => {
                 // This ensures that tasks spawned on the current-thread

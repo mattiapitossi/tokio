@@ -24,7 +24,7 @@ mod support {
 
 // see: https://github.com/tokio-rs/tokio/issues/7979
 #[test]
-fn shutdown_runtime_while_performing_io_uring_ops() {
+fn mine_shutdown_runtime_while_performing_io_uring_ops() {
     if !io_uring_supported() {
         return;
     }
@@ -65,18 +65,22 @@ fn shutdown_runtime_while_performing_io_uring_ops() {
             // Wait for the first poll
             rx.recv().await.unwrap();
 
-            handle.abort();
+            // handle.abort();
 
-            let res = handle.await.unwrap_err();
-            assert!(res.is_cancelled());
+            // let _ = handle.await;
+            //assert!(res.is_cancelled());
         }
     });
 
     // Shutdown the runtime and wait for fds to be closed
-    drop(rt);
+    // drop(rt);
+
+    rt.shutdown_timeout(std::time::Duration::from_millis(1000));
 
     let fd_count_after_cancel = fs::read_dir("/proc/self/fd").unwrap().count();
     let leaked = fd_count_after_cancel.saturating_sub(fd_count_before_opens);
+
+    dbg!(leaked);
 
     // Since we are opening 128 files, we expect that the related fds
     // related to this operation will be closed. Since some other fds

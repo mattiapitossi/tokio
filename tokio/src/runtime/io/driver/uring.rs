@@ -82,6 +82,7 @@ impl UringContext {
                 Some(Lifecycle::Cancelled(cancel_data)) => {
                     if let CancelData::Open(_) = cancel_data {
                         if let Ok(fd) = CqeResult::from(cqe).result {
+                            println!("found open fd closing it");
                             // SAFETY: the successful CQE result provides
                             // a non-negative integer, and the event is
                             // related to an open operation.
@@ -133,10 +134,13 @@ impl UringContext {
 /// Drop the driver, cancelling any in-progress ops and waiting for them to terminate.
 impl Drop for UringContext {
     fn drop(&mut self) {
+        println!("drop uring ctx called");
         if self.uring.is_none() {
             // Uring is not initialized or not supported.
             return;
         }
+
+        dbg!(&self.ops);
 
         // Make sure we flush the submission queue before dropping the driver.
         while !self.ring_mut().submission().is_empty() {
@@ -145,10 +149,13 @@ impl Drop for UringContext {
 
         let mut ops = std::mem::take(&mut self.ops);
 
+        dbg!(&ops);
+
         // Remove all completed ops since we don't need to wait for them.
         ops.retain(|_, lifecycle| !matches!(lifecycle, Lifecycle::Completed(_)));
 
         while !ops.is_empty() {
+            dbg!("cancelling ops");
             // Wait until at least one completion is available.
             self.ring_mut()
                 .submit_and_wait(1)
@@ -158,6 +165,7 @@ impl Drop for UringContext {
                 let idx = cqe.user_data() as usize;
 
                 if let Some(Lifecycle::Cancelled(CancelData::Open(_))) = ops.get_mut(idx) {
+                    dbg!("cancelling {idx}");
                     if let Ok(fd) = CqeResult::from(cqe).result {
                         // SAFETY: the successful CQE result provides
                         // a non-negative integer, and the event is
